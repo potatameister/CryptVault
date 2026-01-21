@@ -82,54 +82,53 @@ jobs:
             </style>
         </resources>
         STYLE
+        
+        # Also update colors.xml
+        cat > android/app/src/main/res/values/colors.xml << 'COLORS'
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <color name="colorPrimary">#0f172a</color>
+            <color name="colorPrimaryDark">#0f172a</color>
+            <color name="colorAccent">#6366f1</color>
+        </resources>
+        COLORS
     
     - name: Copy App Icons
       run: |
-        # Copy icons to Android resources if they exist
         if [ -f "icon-192.png" ]; then
-          cp icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-hdpi/ic_launcher.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-mdpi/ic_launcher.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png || true
-          cp icon-192.png android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png || true
+          for folder in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            cp icon-192.png android/app/src/main/res/mipmap-$folder/ic_launcher.png || true
+            cp icon-192.png android/app/src/main/res/mipmap-$folder/ic_launcher_round.png || true
+            cp icon-192.png android/app/src/main/res/mipmap-$folder/ic_launcher_foreground.png || true
+          done
         fi
     
     - name: Sync
       run: npx cap sync
     
-    - name: Build Debug APK
-      run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew assembleDebug --no-daemon
-    
     - name: Build Release APK
       run: |
         cd android
+        chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
-      continue-on-error: true
     
-    - name: Upload Debug APK
+    - name: Sign APK
+      run: |
+        # Create keystore
+        keytool -genkey -v -keystore release.keystore -alias cryptvault -keyalg RSA -keysize 2048 -validity 10000 -storepass cryptvault123 -keypass cryptvault123 -dname "CN=CryptVault, OU=App, O=Potatameister, L=Unknown, ST=Unknown, C=US"
+        
+        # Sign the APK
+        cd android/app/build/outputs/apk/release
+        
+        # Find the unsigned APK
+        UNSIGNED_APK=$(ls *.apk | head -1)
+        
+        # Use apksigner
+        ${ANDROID_HOME}/build-tools/34.0.0/apksigner sign --ks ../../../../../../release.keystore --ks-key-alias cryptvault --ks-pass pass:cryptvault123 --key-pass pass:cryptvault123 --out CryptVault-signed.apk $UNSIGNED_APK
+    
+    - name: Upload Signed APK
       uses: actions/upload-artifact@v4
       with:
-        name: CryptVault-Debug
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        name: CryptVault-v1.5.0
+        path: android/app/build/outputs/apk/release/CryptVault-signed.apk
         retention-days: 90
-    
-    - name: Upload Release APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: CryptVault-Release
-        path: android/app/build/outputs/apk/release/app-release-unsigned.apk
-        retention-days: 90
-      continue-on-error: true
