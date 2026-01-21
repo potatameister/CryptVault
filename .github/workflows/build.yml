@@ -2,7 +2,7 @@ name: Build APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -24,9 +24,22 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
     
-    - name: Install dependencies
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+    
+    - name: Create package.json
       run: |
-        npm install @capacitor/core @capacitor/cli @capacitor/android
+        cat > package.json << 'EOF'
+        {
+          "name": "cryptvault",
+          "version": "1.0.0",
+          "private": true
+        }
+        EOF
+    
+    - name: Install Capacitor
+      run: |
+        npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
     
     - name: Create Capacitor config
       run: |
@@ -37,6 +50,9 @@ jobs:
           "webDir": "www",
           "server": {
             "androidScheme": "https"
+          },
+          "android": {
+            "allowMixedContent": false
           }
         }
         EOF
@@ -47,23 +63,29 @@ jobs:
         cp index.html www/
         cp sw.js www/
         cp manifest.json www/
-        cp icon-192.png www/
-        cp icon-512.png www/
+        cp icon-192.png www/ 2>/dev/null || echo "icon-192 not found"
+        cp icon-512.png www/ 2>/dev/null || echo "icon-512 not found"
+    
+    - name: Initialize Capacitor
+      run: npx cap init CryptVault com.potatameister.cryptvault --web-dir www || true
     
     - name: Add Android platform
       run: npx cap add android
     
-    - name: Sync Capacitor
+    - name: Update Android project
       run: npx cap sync android
+    
+    - name: Set Gradle permissions
+      run: chmod +x android/gradlew
     
     - name: Build Debug APK
       run: |
         cd android
-        chmod +x gradlew
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug --no-daemon
     
-    - name: Upload APK
+    - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
-        name: CryptVault-APK
+        name: CryptVault-Debug-APK
         path: android/app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 30
