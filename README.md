@@ -22,8 +22,8 @@ Secure, offline-first text encryption app. Military-grade encryption that works 
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="screenshots/screenshot1.png" width="250" />
-  <img src="screenshots/screenshot2.png" width="250" />
+  <img src="screenshots/screenshot1.jpg" width="250" />
+  <img src="screenshots/screenshot2.jpg" width="250" />
 </p>
 
 ## 🛡️ Security
