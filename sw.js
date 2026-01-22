@@ -1,4 +1,4 @@
-const CACHE = 'cv3';
+const CACHE = 'cv5';
 const FILES = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

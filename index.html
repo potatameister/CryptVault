@@ -31,6 +31,7 @@
             --accent2: #818cf8;
             --success: #10b981;
             --error: #ef4444;
+            --warning: #f59e0b;
         }
         
         .light {
@@ -220,6 +221,10 @@
             font-size: 12px;
             color: var(--text2);
             margin-top: 6px;
+        }
+        
+        .method-info.warning {
+            color: var(--warning);
         }
         
         /* Password Field */
@@ -587,6 +592,10 @@
             left: 4px;
         }
         
+        .warning-text {
+            color: var(--warning) !important;
+        }
+        
         .github-btn {
             width: 100%;
             padding: 14px;
@@ -674,9 +683,9 @@
                     <option value="AES-CBC">🔐 AES-256-CBC (Classic)</option>
                     <option value="AES-CTR">⚡ AES-256-CTR (Fast)</option>
                     <option value="TRIPLE">🔒 Triple Layer (Maximum)</option>
-                    <option value="SIMPLE">🔁 Simple (Same Output)</option>
+                    <option value="SIMPLE">⚠️ Simple (Deterministic)</option>
                 </select>
-                <p class="method-info" id="methodInfo">Military-grade encryption with authentication. Best for passwords.</p>
+                <p class="method-info" id="methodInfo">Military-grade encryption with authentication. Best for sensitive data.</p>
             </div>
 
             <!-- Input -->
@@ -762,7 +771,7 @@
         <!-- Footer -->
         <div class="footer">
             <p>🔐 100% Offline • No data leaves your device</p>
-            <p>v1.5.0 • Made with ❤️ by potatameister</p>
+            <p>v1.5.1 • Made with ❤️ by potatameister</p>
         </div>
     </div>
 
@@ -792,11 +801,11 @@
                     Encryption Methods
                 </h4>
                 <ul>
-                    <li><strong>AES-256-GCM</strong> — Military-grade with authentication. Detects tampering. Best for passwords.</li>
+                    <li><strong>AES-256-GCM</strong> — Military-grade with authentication. Detects tampering. Best for sensitive data.</li>
                     <li><strong>AES-256-CBC</strong> — Classic block cipher. Bank-level security, widely compatible.</li>
                     <li><strong>AES-256-CTR</strong> — Counter mode. Fastest option for large texts.</li>
                     <li><strong>Triple Layer</strong> — Maximum security with multiple encryption passes.</li>
-                    <li><strong>Simple</strong> — Same text + password = same result. Easy to remember!</li>
+                    <li class="warning-text"><strong>Simple (Deterministic)</strong> — ⚠️ WEAKER: Same input + password = same output. Patterns can be detected. Only for low-risk data!</li>
                 </ul>
             </div>
 
@@ -807,7 +816,7 @@
                 </h4>
                 <ul>
                     <li>Uses <strong>Web Crypto API</strong> built into your browser</li>
-                    <li>Password transformed with <strong>PBKDF2</strong> (100,000 iterations)</li>
+                    <li>Password transformed with <strong>PBKDF2</strong> (250,000 iterations)</li>
                     <li>Random <strong>salt + IV</strong> makes each encryption unique</li>
                     <li><strong>Zero network requests</strong> — everything stays on device</li>
                     <li>Works <strong>100% offline</strong> after install</li>
@@ -821,7 +830,7 @@
                 </h4>
                 <ul>
                     <li>Stored in browser's <strong>localStorage</strong> only</li>
-                    <li>Full encrypted text saved for easy copying</li>
+                    <li>Only <strong>encrypted text</strong> is saved (never passwords!)</li>
                     <li>Maximum <strong>10 entries</strong> kept</li>
                     <li><strong>Never synced</strong> anywhere</li>
                     <li>Clear anytime with one tap</li>
@@ -842,12 +851,12 @@
                 </ul>
             </div>
 
-            <a href="https://github.com/potatameister" target="_blank" rel="noopener" class="github-btn">
+            <a href="https://github.com/potatameister/CryptVault" target="_blank" rel="noopener" class="github-btn">
                 <svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                Follow @potatameister on GitHub
+                View on GitHub
             </a>
 
-            <p class="modal-footer">Version 1.5.0 • MIT License</p>
+            <p class="modal-footer">v1.5.1 • MIT License</p>
         </div>
     </div>
 
@@ -890,14 +899,16 @@
         // Method Info
         function updateInfo() {
             const m = document.getElementById('method').value;
+            const infoEl = document.getElementById('methodInfo');
             const info = {
-                'AES-GCM': 'Military-grade encryption with authentication. Best for passwords.',
-                'AES-CBC': 'Classic block cipher. Bank-level security, widely compatible.',
-                'AES-CTR': 'Counter mode. Fastest option for large texts.',
-                'TRIPLE': 'Maximum security with multiple encryption layers.',
-                'SIMPLE': 'Same text + password = same result every time. Easy to remember.'
+                'AES-GCM': { text: 'Military-grade encryption with authentication. Best for sensitive data.', warn: false },
+                'AES-CBC': { text: 'Classic block cipher. Bank-level security, widely compatible.', warn: false },
+                'AES-CTR': { text: 'Counter mode. Fastest option for large texts.', warn: false },
+                'TRIPLE': { text: 'Maximum security with multiple encryption layers.', warn: false },
+                'SIMPLE': { text: '⚠️ WEAKER: Same text + password = same result. Patterns can be detected. Only for low-risk data!', warn: true }
             };
-            document.getElementById('methodInfo').textContent = info[m];
+            infoEl.textContent = info[m].text;
+            infoEl.className = 'method-info' + (info[m].warn ? ' warning' : '');
         }
 
         // Password
@@ -939,13 +950,13 @@
             toast('Password generated!', 'success');
         }
 
-        // Crypto
+        // Crypto - 250,000 iterations for PBKDF2
         async function deriveKey(pass, salt, method) {
             const enc = new TextEncoder();
             const km = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
-            const algo = method === 'TRIPLE' ? 'AES-GCM' : method;
+            const algo = method === 'TRIPLE' ? 'AES-GCM' : (method === 'SIMPLE' ? 'AES-GCM' : method);
             return crypto.subtle.deriveKey(
-                { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+                { name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' },
                 km,
                 { name: algo, length: 256 },
                 false,
@@ -958,18 +969,16 @@
             
             // SIMPLE mode: deterministic (same input = same output)
             if (method === 'SIMPLE') {
-                // Create fixed salt and IV from password
                 const passHash = await crypto.subtle.digest('SHA-256', enc.encode(pass));
                 const salt = new Uint8Array(passHash).slice(0, 16);
                 const iv = new Uint8Array(passHash).slice(16, 28);
                 
-                const key = await deriveKey(pass, salt, 'AES-GCM');
+                const key = await deriveKey(pass, salt, method);
                 const encrypted = await crypto.subtle.encrypt(
                     { name: 'AES-GCM', iv },
                     key, enc.encode(text)
                 );
                 
-                // Combine: method(1) + data (no salt/iv needed, derived from password)
                 const combined = new Uint8Array(1 + encrypted.byteLength);
                 combined[0] = 5; // SIMPLE = 5
                 combined.set(new Uint8Array(encrypted), 1);
@@ -993,7 +1002,6 @@
                 key, data
             );
 
-            // Combine: method(1) + salt(16) + iv(12/16) + data
             const methodByte = { 'AES-GCM': 1, 'AES-CBC': 2, 'AES-CTR': 3, 'TRIPLE': 4 }[method];
             const combined = new Uint8Array(1 + salt.length + iv.length + encrypted.byteLength);
             combined[0] = methodByte;
@@ -1013,14 +1021,13 @@
                 const method = methods[methodByte];
                 if (!method) throw new Error('Invalid format');
 
-                // SIMPLE mode: deterministic decryption
                 if (method === 'SIMPLE') {
                     const passHash = await crypto.subtle.digest('SHA-256', enc.encode(pass));
                     const salt = new Uint8Array(passHash).slice(0, 16);
                     const iv = new Uint8Array(passHash).slice(16, 28);
                     const data = combined.slice(1);
                     
-                    const key = await deriveKey(pass, salt, 'AES-GCM');
+                    const key = await deriveKey(pass, salt, method);
                     const decrypted = await crypto.subtle.decrypt(
                         { name: 'AES-GCM', iv },
                         key, data
@@ -1100,7 +1107,7 @@
             checkStrength();
         }
 
-        // History
+        // History - stores only encrypted text, never passwords
         function addHistory(type, full, method) {
             history.unshift({ type, full, method, time: new Date().toLocaleTimeString() });
             if (history.length > 10) history.pop();
