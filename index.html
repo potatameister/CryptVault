@@ -247,7 +247,7 @@
             letter-spacing: 0.5px;
         }
         
-        .input, .select, .textarea {
+        .input, .textarea, .select-trigger {
             width: 100%;
             padding: 14px 16px;
             background: var(--bg-input);
@@ -260,11 +260,11 @@
             transition: all 0.2s;
         }
         
-        .input:hover, .textarea:hover, .select:hover {
+        .input:hover, .textarea:hover, .select-trigger:hover {
             border-color: var(--border-hover);
         }
         
-        .input:focus, .textarea:focus, .select:focus {
+        .input:focus, .textarea:focus, .select-trigger:focus {
             background: var(--bg-card);
             border-color: var(--primary);
             box-shadow: 0 0 0 3px var(--primary-light);
@@ -282,15 +282,18 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
         
-        .select {
+        /* Custom Select Trigger */
+        .select-trigger {
             cursor: pointer;
-            -webkit-appearance: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            background-size: 16px;
-            padding-right: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .select-trigger svg {
+            width: 16px;
+            height: 16px;
+            stroke: var(--text-muted);
         }
         
         .field {
@@ -637,7 +640,7 @@
             border-radius: 24px;
             width: 100%;
             max-width: 480px;
-            padding: 0; /* Padding moved to children */
+            padding: 0;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             border: 1px solid var(--border);
             max-height: 85vh;
@@ -646,10 +649,14 @@
             overflow: hidden;
         }
         
-        /* Fixed Modal Header */
+        /* Polish: Modal Animation */
+        .modal.open .modal-box {
+            animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
         .modal-header {
             flex-shrink: 0;
-            padding: 16px 24px; /* Tighter padding as requested */
+            padding: 16px 24px;
             background: var(--bg-card);
             border-bottom: 1px solid var(--border);
             display: flex;
@@ -732,6 +739,96 @@
             line-height: 1.5;
         }
         
+        /* Method Selector Modal Styles */
+        .method-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .method-option {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            padding: 16px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            position: relative;
+        }
+
+        .method-option:hover {
+            border-color: var(--primary);
+            background: var(--bg-card);
+        }
+
+        .method-option.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+
+        .method-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .method-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* NEW BADGE STYLE */
+        .badge-rec {
+            font-size: 10px;
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            height: 20px;
+        }
+        
+        .method-check {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .method-option.selected .method-check {
+            border-color: var(--primary);
+            background: var(--primary);
+        }
+
+        .method-check svg {
+            width: 12px;
+            height: 12px;
+            stroke: white;
+            stroke-width: 3px;
+            display: none;
+        }
+
+        .method-option.selected .method-check svg {
+            display: block;
+        }
+
+        .method-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+        
         .modal-actions {
             display: flex;
             flex-direction: column;
@@ -770,17 +867,6 @@
         
         .sponsor-btn:hover { background: #be185d; }
         
-        .logo-gen-btn {
-            background: var(--bg-input);
-            color: var(--text-main);
-            border: 1px solid var(--border);
-        }
-        
-        .logo-gen-btn:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-        
         .modal-footer-text {
             text-align: center;
             font-size: 11px;
@@ -792,6 +878,11 @@
         .hidden { display: none !important; }
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* NEW KEYFRAMES */
+        @keyframes scaleIn { 
+            from { transform: scale(0.95) translateY(10px); opacity: 0; } 
+            to { transform: scale(1) translateY(0); opacity: 1; } 
+        }
         @keyframes slideUp { from { transform: translateY(40px) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
         
         /* Desktop */
@@ -815,7 +906,6 @@
             }
         }
     </style>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body>
     <div class="container">
@@ -835,7 +925,7 @@
                 </div>
             </div>
             <div class="header-btns">
-                <button class="icon-btn" onclick="openModal()" aria-label="About">
+                <button class="icon-btn" onclick="openModal('modalAbout')" aria-label="About">
                     <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -863,14 +953,13 @@
                     <!-- Method -->
                     <div class="field">
                         <label class="label">Encryption Method</label>
-                        <select class="select" id="method" onchange="updateInfo()">
-                            <option value="AES-GCM">AES-256-GCM (Recommended)</option>
-                            <option value="AES-CBC">AES-256-CBC (Classic)</option>
-                            <option value="AES-CTR">AES-256-CTR (Fast)</option>
-                            <option value="TRIPLE">Triple Layer (Extra Safe)</option>
-                            <option value="SIMPLE">Simple (Deterministic)</option>
-                        </select>
-                        <p class="method-info" id="methodInfo">Military-grade encryption with authentication.</p>
+                        <div class="select-trigger" onclick="openModal('modalMethod')" id="methodTrigger">
+                            <span id="methodDisplay">AES-256-GCM (Recommended)</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                        <p class="method-info" id="methodInfo">Military-grade encryption with authentication. Best for sensitive data.</p>
                     </div>
 
                     <!-- Input -->
@@ -962,15 +1051,15 @@
         </div>
     </div>
 
-    <!-- Modal -->
-    <div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+    <!-- About Modal -->
+    <div class="modal" id="modalAbout" onclick="if(event.target===this)closeModal('modalAbout')">
         <div class="modal-box">
             <div class="modal-header">
                 <div class="modal-title-wrap">
                     <img src="icons/icon-192.png" alt="CryptVault" class="modal-logo" onerror="this.style.display='none'">
                     <h2>About</h2>
                 </div>
-                <button class="action-icon" onclick="closeModal()">
+                <button class="action-icon" onclick="closeModal('modalAbout')">
                     <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -995,30 +1084,6 @@
                     </div>
                 </div>
     
-                <div class="section-title">Encryption Modes</div>
-                <div class="about-grid">
-                    <div class="about-item">
-                        <h4>AES-GCM (Recommended)</h4>
-                        <p>Galois/Counter Mode. It encrypts your data AND checks for tampering. If someone changes even one letter of the cipher, it will fail to decrypt.</p>
-                    </div>
-                    <div class="about-item">
-                        <h4>AES-CBC</h4>
-                        <p>Cipher Block Chaining. A classic, robust standard. Good compatibility with older systems.</p>
-                    </div>
-                    <div class="about-item">
-                        <h4>AES-CTR</h4>
-                        <p>Counter Mode. Very fast, turns block ciphers into stream ciphers. Great for large texts.</p>
-                    </div>
-                    <div class="about-item">
-                        <h4>Triple Layer</h4>
-                        <p>Base64 encodes your data, encrypts it with AES-GCM, then Base64 encodes the result again. Overkill, but fun.</p>
-                    </div>
-                     <div class="about-item">
-                        <h4>Simple (Deterministic)</h4>
-                        <p>Generates the encryption key directly from the password hash without a random salt. Same Password + Same Text = Same Result. (Use with caution).</p>
-                    </div>
-                </div>
-    
                 <div class="modal-actions">
                     <a href="https://github.com/potatameister/CryptVault" target="_blank" rel="noopener" class="modal-btn github-btn">
                         <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
@@ -1035,19 +1100,53 @@
         </div>
     </div>
 
+    <!-- Method Selector Modal -->
+    <div class="modal" id="modalMethod" onclick="if(event.target===this)closeModal('modalMethod')">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <h2>Select Method</h2>
+                </div>
+                <button class="action-icon" onclick="closeModal('modalMethod')">
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-content">
+                <div class="method-list" id="methodList">
+                    <!-- Methods injected by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast-container" id="toasts"></div>
 
     <script>
         // State
         let mode = 'encrypt';
+        let currentMethod = 'AES-GCM';
         // FIXED: Renamed history to opHistory to avoid collision with global window.history
         let opHistory = JSON.parse(localStorage.getItem('cv_history') || '[]');
         let dark = localStorage.getItem('cv_dark') === 'true';
 
+        // Constants
+        const METHODS = {
+            'AES-GCM': { name: 'AES-256-GCM', desc: 'Military-grade encryption with authentication. Best for sensitive data.', recommended: true },
+            'AES-CBC': { name: 'AES-256-CBC', desc: 'Classic block cipher. Bank-level security, widely compatible.', warn: false },
+            'AES-CTR': { name: 'AES-256-CTR', desc: 'Counter mode. Fastest option for large texts.', warn: false },
+            'TRIPLE': { name: 'Triple Layer', desc: 'Enhanced security with Base64 encoding + AES-GCM.', warn: false },
+            'SIMPLE': { name: 'Simple', desc: '⚠️ WEAKER: Same text + password = same result.', warn: true }
+        };
+
         // Init
         applyTheme();
         renderHistory();
+        renderMethods();
         updateInfo();
 
         // Theme
@@ -1081,19 +1180,38 @@
             document.getElementById('inputText').placeholder = enc ? 'Type secret text here...' : 'Paste ciphertext...';
         }
 
-        // Method Info
+        // Method Selector
+        function renderMethods() {
+            const list = document.getElementById('methodList');
+            list.innerHTML = Object.keys(METHODS).map(key => `
+                <div class="method-option ${key === currentMethod ? 'selected' : ''}" onclick="selectMethod('${key}')">
+                    <div class="method-head">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                            <span class="method-title">${METHODS[key].name}</span>
+                            ${METHODS[key].recommended ? '<span class="badge-rec">Recommended</span>' : ''}
+                        </div>
+                        <div class="method-check">
+                            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </div>
+                    </div>
+                    <p class="method-desc">${METHODS[key].desc}</p>
+                </div>
+            `).join('');
+        }
+
+        function selectMethod(key) {
+            currentMethod = key;
+            updateInfo();
+            renderMethods();
+            closeModal('modalMethod');
+        }
+
         function updateInfo() {
-            const m = document.getElementById('method').value;
+            const info = METHODS[currentMethod];
+            document.getElementById('methodDisplay').textContent = info.name + (info.recommended ? ' (Recommended)' : '');
             const infoEl = document.getElementById('methodInfo');
-            const info = {
-                'AES-GCM': { text: 'Military-grade encryption with authentication. Best for sensitive data.', warn: false },
-                'AES-CBC': { text: 'Classic block cipher. Bank-level security, widely compatible.', warn: false },
-                'AES-CTR': { text: 'Counter mode. Fastest option for large texts.', warn: false },
-                'TRIPLE': { text: 'Enhanced security with Base64 encoding + AES-GCM.', warn: false },
-                'SIMPLE': { text: '⚠️ WEAKER: Same text + password = same result.', warn: true }
-            };
-            infoEl.textContent = info[m].text;
-            infoEl.className = 'method-info' + (info[m].warn ? ' warning' : '');
+            infoEl.textContent = info.desc;
+            infoEl.className = 'method-info' + (info.warn ? ' warning' : '');
         }
 
         // Password
@@ -1213,7 +1331,8 @@
         async function process() {
             const text = document.getElementById('inputText').value.trim();
             const pass = document.getElementById('password').value;
-            const method = document.getElementById('method').value;
+            // Use global currentMethod instead of DOM element
+            const method = currentMethod; 
 
             if (!text) return toast('Enter text', 'error');
             if (!pass) return toast('Enter password', 'error');
@@ -1294,8 +1413,13 @@
         }
 
         // Modal
-        function openModal() { document.getElementById('modal').classList.add('open'); }
-        function closeModal() { document.getElementById('modal').classList.remove('open'); }
+        function openModal(id) { document.getElementById(id).classList.add('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+        // For existing calls that didn't pass ID, default to modalAbout (backwards compat)
+        window.openModal = function(id) { 
+            if(!id || typeof id !== 'string') id = 'modalAbout';
+            document.getElementById(id).classList.add('open'); 
+        }
 
         // Toast
         function toast(msg, type) {
@@ -1311,7 +1435,7 @@
             navigator.serviceWorker.register('sw.js');
         }
 
-        // FIXED: Explicitly expose functions to window to fix ReferenceErrors in module environments
+        // Expose functions to window
         window.switchTab = switchTab;
         window.updateInfo = updateInfo;
         window.togglePass = togglePass;
@@ -1322,10 +1446,9 @@
         window.clearResult = clearResult;
         window.clearHistory = clearHistory;
         window.copyHistory = copyHistory;
-        window.openModal = openModal;
         window.closeModal = closeModal;
         window.toggleTheme = toggleTheme;
+        window.selectMethod = selectMethod;
     </script>
-<script type="module" src="/index.tsx"></script>
 </body>
 </html>
