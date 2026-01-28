@@ -1,0 +1,208 @@
+name: Build CryptVault
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g. 1.5.1)'
+        required: true
+        default: '1.5.1'
+      version_code:
+        description: 'Version code (integer, must increase)'
+        required: true
+        default: '2'
+
+env:
+  APP_NAME: CryptVault
+  PACKAGE_ID: com.potatameister.cryptvault
+  SOURCE_REPO: potatameister/CryptVault
+  KEY_FILENAME: cryptvault.keystore
+  KEY_ALIAS: cryptvault
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout AppBuilder
+      uses: actions/checkout@v4
+
+    - name: Checkout Source App
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ env.SOURCE_REPO }}
+        path: app-source
+
+    - name: Setup Tools
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+    - uses: android-actions/setup-android@v3
+
+    - name: Manage Keystore
+      run: |
+        mkdir -p keys
+        KEY_PATH="keys/${{ env.KEY_FILENAME }}"
+        if [ ! -f "$KEY_PATH" ]; then
+          echo "🔑 Creating keystore..."
+          keytool -genkey -v \
+            -keystore "$KEY_PATH" \
+            -alias "${{ env.KEY_ALIAS }}" \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
+            -keypass ${{ secrets.KEYSTORE_PASSWORD }} \
+            -dname "CN=${{ env.APP_NAME }}, OU=Apps, O=Potatameister, L=Unknown, ST=Unknown, C=US"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$KEY_PATH"
+          git commit -m "🔑 Generated key for ${{ env.APP_NAME }}"
+          git push
+        fi
+
+    - name: Clean & Setup
+      run: |
+        rm -rf android node_modules www capacitor.config.json package.json package-lock.json
+        npm init -y
+        npm install @capacitor/core @capacitor/cli @capacitor/android
+        mkdir -p www
+        mkdir -p www/icons
+        cp app-source/index.html app-source/sw.js app-source/manifest.json www/
+        cp app-source/icons/* www/icons/ 2>/dev/null || true
+
+    - name: Init Capacitor
+      run: |
+        npx cap init "${{ env.APP_NAME }}" "${{ env.PACKAGE_ID }}" --web-dir www
+        cat > capacitor.config.json << EOF
+        {
+          "appId": "${{ env.PACKAGE_ID }}",
+          "appName": "${{ env.APP_NAME }}",
+          "webDir": "www",
+          "android": { "versionName": "${{ inputs.version }}", "versionCode": ${{ inputs.version_code }} }
+        }
+        EOF
+        npx cap add android
+
+    - name: Configure Android
+      run: |
+        # Fix version in gradle
+        sed -i "s/versionCode 1/versionCode ${{ inputs.version_code }}/" android/app/build.gradle
+        sed -i "s/versionName \"1.0\"/versionName \"${{ inputs.version }}\"/" android/app/build.gradle
+        
+        # Fix Kotlin
+        cat >> android/app/build.gradle << 'EOF'
+        configurations.all { resolutionStrategy { force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22', 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22', 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22' } }
+        EOF
+        
+        # Fix Status Bar (SOLID)
+        cat > android/app/src/main/res/values/styles.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+                <item name="android:statusBarColor">#0f172a</item>
+                <item name="android:navigationBarColor">#0f172a</item>
+                <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+                <item name="android:windowLightStatusBar">false</item>
+                <item name="android:windowTranslucentStatus">false</item>
+                <item name="android:windowTranslucentNavigation">false</item>
+                <item name="android:windowBackground">@color/colorPrimary</item>
+            </style>
+            <style name="AppTheme.NoActionBar" parent="AppTheme"/>
+            <style name="AppTheme.NoActionBarLaunch" parent="AppTheme.NoActionBar">
+                <item name="android:background">@drawable/splash</item>
+            </style>
+        </resources>
+        EOF
+        
+        cat > android/app/src/main/res/values/colors.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <color name="colorPrimary">#0f172a</color>
+            <color name="colorPrimaryDark">#0f172a</color>
+            <color name="colorAccent">#6366f1</color>
+        </resources>
+        EOF
+        
+        # MainActivity for solid status bar
+        cat > android/app/src/main/java/com/potatameister/cryptvault/MainActivity.java << 'EOF'
+        package com.potatameister.cryptvault;
+        import android.os.Bundle;
+        import android.view.Window;
+        import android.view.WindowManager;
+        import android.graphics.Color;
+        import android.graphics.drawable.ColorDrawable;
+        import com.getcapacitor.BridgeActivity;
+        public class MainActivity extends BridgeActivity {
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                Window w = getWindow();
+                w.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                w.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                w.setStatusBarColor(Color.parseColor("#0f172a"));
+                w.setNavigationBarColor(Color.parseColor("#0f172a"));
+                w.setBackgroundDrawable(new ColorDrawable(Color.parseColor("#0f172a")));
+            }
+        }
+        EOF
+
+    - name: Copy Icons
+      run: |
+        if [ -f "app-source/icons/icon-192.png" ]; then
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p android/app/src/main/res/mipmap-$d
+            cp app-source/icons/icon-192.png android/app/src/main/res/mipmap-$d/ic_launcher.png
+            cp app-source/icons/icon-192.png android/app/src/main/res/mipmap-$d/ic_launcher_round.png
+            cp app-source/icons/icon-192.png android/app/src/main/res/mipmap-$d/ic_launcher_foreground.png
+          done
+          mkdir -p android/app/src/main/res/drawable
+          cp app-source/icons/icon-192.png android/app/src/main/res/drawable/splash.png
+        fi
+        rm -f android/app/src/main/res/mipmap-anydpi-v26/*.xml 2>/dev/null || true
+
+    - name: Build
+      run: |
+        npx cap sync
+        cd android && chmod +x gradlew
+        ./gradlew assembleDebug assembleRelease bundleRelease --no-daemon
+
+    - name: Sign
+      run: |
+        cd android/app/build/outputs
+        $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
+          --ks ../../../../keys/${{ env.KEY_FILENAME }} \
+          --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
+          --key-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
+          --ks-key-alias ${{ env.KEY_ALIAS }} \
+          --out apk/release/${{ env.APP_NAME }}-v${{ inputs.version }}-signed.apk \
+          apk/release/app-release-unsigned.apk
+        
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore ../../../../keys/${{ env.KEY_FILENAME }} \
+          -storepass ${{ secrets.KEYSTORE_PASSWORD }} \
+          -keypass ${{ secrets.KEYSTORE_PASSWORD }} \
+          bundle/release/app-release.aab ${{ env.KEY_ALIAS }}
+
+    - name: Upload Debug
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.APP_NAME }}-v${{ inputs.version }}-debug
+        path: android/app/build/outputs/apk/debug/app-debug.apk
+
+    - name: Upload Signed APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.APP_NAME }}-v${{ inputs.version }}-signed
+        path: android/app/build/outputs/apk/release/${{ env.APP_NAME }}-v${{ inputs.version }}-signed.apk
+
+    - name: Upload AAB
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.APP_NAME }}-v${{ inputs.version }}-aab
+        path: android/app/build/outputs/bundle/release/app-release.aab
